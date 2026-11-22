@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101827">
+<title>WiFi Phone</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;padding:18px 12px;background:radial-gradient(circle at top,#243653,#101827 58%);color:#f8fafc;font-family:system-ui;display:flex;justify-content:center;align-items:center}
+.app{width:100%;max-width:440px}.brand{text-align:center;margin-bottom:16px}.logo{font-size:34px}h1{margin:2px 0;font-size:25px}.muted{color:#9eacc2;font-size:13px}
+.panel{background:#172438;border:1px solid #34445d;border-radius:22px;padding:17px;box-shadow:0 18px 50px #0005}
+.my-number{text-align:center;padding:8px 0 15px}.number{font-size:clamp(22px,6vw,29px);font-weight:750;letter-spacing:1px;margin-top:5px}
+.display{width:100%;min-height:52px;border-radius:13px;border:1px solid #40516b;background:#101b2c;color:white;font-size:22px;text-align:center;padding:10px;letter-spacing:1px}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:13px 0}
+button{border:0;border-radius:14px;padding:13px 8px;font-size:18px;font-weight:650;color:white;background:#2b3d59;cursor:pointer}
+button:active{transform:scale(.97)}button:disabled{opacity:.45}
+.key small{display:block;color:#aebbd0;font-size:9px;margin-top:2px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}.call{background:#16a36a}.hang{background:#dc4352}.secondary{background:#42516a}.small{font-size:14px;padding:11px}
+.status{text-align:center;color:#a9bad2;font-size:13px;margin:10px 0;min-height:20px}
+.incoming{display:none;text-align:center;margin-top:13px;padding:15px;border-radius:17px;background:#263a56}.incoming strong{display:block;font-size:22px;margin:6px}
+.call-tools{display:none;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+.section-title{font-weight:700;margin:19px 2px 8px;display:flex;justify-content:space-between;align-items:center}
+.contacts{display:grid;gap:8px}.contact{display:flex;align-items:center;gap:9px;background:#101b2c;border:1px solid #34445d;border-radius:13px;padding:10px}
+.contact-info{flex:1;min-width:0}.contact-name{font-weight:700;overflow-wrap:anywhere}.contact-number{font-size:12px;color:#9eacc2}.contact button{padding:9px 12px;font-size:18px}
+.foot{text-align:center;margin-top:13px;color:#8191a9;font-size:11px}
+.overlay{display:none;position:fixed;inset:0;z-index:5;background:linear-gradient(160deg,#203b5d,#0b1322);align-items:center;justify-content:center;padding:22px}
+.call-screen{width:100%;max-width:390px;text-align:center}.avatar{width:112px;height:112px;border-radius:50%;background:#304765;display:grid;place-items:center;font-size:48px;margin:0 auto 20px}
+.call-screen .who{font-size:25px;font-weight:750}.call-screen .sub{color:#a9bad2;margin-top:7px}.call-screen .timer{font-size:18px;margin:22px}
+.call-screen .mic-symbol{position:relative;z-index:1}.mic-ban{display:none;position:absolute;right:-5px;top:-7px;font-size:17px;line-height:1;text-shadow:0 1px 3px #000}.round{position:relative}.incoming-overlay-actions{display:flex;gap:14px;justify-content:center;margin:24px 0}.main-actions{display:flex;justify-content:center;gap:24px;margin:35px 0}.round{width:66px;height:66px;border-radius:50%;font-size:25px;padding:0}.end-round{background:#dc4352}
+.more-wrap{position:relative}.more-menu{display:none;position:absolute;bottom:75px;left:50%;transform:translateX(-50%);width:190px;background:#263a56;padding:10px;border-radius:15px;box-shadow:0 8px 28px #0008}
+.more-menu button{width:100%;font-size:14px;margin:3px 0}.effects{display:none;margin-top:16px}.effect-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.effect{border-radius:50%;aspect-ratio:1;padding:5px;font-size:12px;background:#344b6b;border:2px solid transparent}.effect.active{border-color:#4ade80;background:#176247}
+@media(max-height:760px){body{align-items:flex-start}.overlay{overflow:auto}.call-screen{padding:20px 0}}
+</style>
+</head>
+<body>
+<main class="app">
+<header class="brand"><div class="logo">📞</div><h1>WIFI PHONE</h1><div class="muted">İnternet üzerinden sesli arama</div></header>
+<section class="panel">
+  <div class="my-number"><div class="muted">SANA AİT NUMARA</div><div class="number" id="myNumber">Yükleniyor...</div><div class="muted">Bu numarayı arkadaşınla paylaş</div></div>
+  <input id="dial" class="display" type="tel" inputmode="numeric" maxlength="10" placeholder="10 haneli numara">
+  <div class="keypad" id="keypad">
+    <button class="key" data-key="1">1<small></small></button><button class="key" data-key="2">2<small>ABC</small></button><button class="key" data-key="3">3<small>DEF</small></button>
+    <button class="key" data-key="4">4<small>GHI</small></button><button class="key" data-key="5">5<small>JKL</small></button><button class="key" data-key="6">6<small>MNO</small></button>
+    <button class="key" data-key="7">7<small>PQRS</small></button><button class="key" data-key="8">8<small>TUV</small></button><button class="key" data-key="9">9<small>WXYZ</small></button>
+    <button class="key" data-key="clear">⌫<small>SİL</small></button><button class="key" data-key="0">0<small>+</small></button><button class="key" data-key="clearall">C<small>TEMİZLE</small></button>
+  </div>
+  <div class="actions"><button id="callBtn" class="call">📞 Ara</button><button id="hangBtn" class="hang" disabled>✕ Kapat</button></div>
+  <div class="status" id="status">Sunucuya bağlanılıyor...</div>
+  <div class="incoming" id="incoming"><div class="muted">GELEN ARAMA</div><strong id="callerNumber"></strong><div class="actions"><button id="acceptBtn" class="call small">✓ Kabul et</button><button id="rejectBtn" class="hang small">✕ Reddet</button></div></div>
+  <div class="call-tools" id="callTools"><button id="muteBtn" class="secondary small">🎙️ Mikrofonu kapat</button><button id="speakerBtn" class="secondary small">🔊 Ses bilgisi</button></div>
+  <div class="section-title">Kişiler <span class="muted" id="contactCount"></span></div>
+  <div class="contacts" id="contacts"><div class="muted">Henüz kişi yok. Bir görüşme tamamlayınca kişi burada görünür.</div></div>
+</section>
+<div class="foot">Mikrofon izni gerekir. İnternet bağlantısı açık olmalıdır. Acil aramalar için kullanılmaz.</div>
+</main>
+
+<div class="overlay" id="callOverlay">
+  <div class="call-screen">
+    <div class="avatar">👤</div><div class="who" id="callWho">Aranıyor...</div><div class="sub" id="callState">Bağlantı kuruluyor</div><div class="timer" id="callTimer">00:00</div>
+    <div class="incoming-overlay-actions" id="incomingOverlayActions" style="display:none"><button id="overlayAccept" class="call small">✓ Kabul et</button><button id="overlayReject" class="hang small">✕ Reddet</button></div>
+    <div class="main-actions" id="mainCallActions">
+      <button class="round secondary" id="overlayMute" title="Mikrofon"><span class="mic-symbol">🎙️</span><span class="mic-ban" id="micBan">🚫</span></button>
+      <div class="more-wrap"><button class="round secondary" id="moreBtn" title="Diğer seçenekler">···</button>
+        <div class="more-menu" id="moreMenu"><button id="showEffects">🎛️ Ses Efektleri</button><button id="hideEffects">Menüyü kapat</button></div>
+      </div>
+      <button class="round end-round" id="overlayHang" title="Kapat">📞</button>
+    </div>
+    <div class="effects" id="effectsPanel"><div class="muted" style="margin-bottom:12px">SES EFEKTLERİ</div>
+      <div class="effect-grid">
+        <button class="effect active" data-effect="normal">🎙️<br>Normal</button>
+        <button class="effect" data-effect="bass">🔊<br>Bass</button>
+        <button class="effect" data-effect="deep">🗣️<br>Kalın ses</button>
+        <button class="effect" data-effect="squirrel">🐿️<br>Sincap</button>
+      </div>
+      <div class="muted" style="margin-top:10px">Efektler görüşme sırasında karşı tarafa iletilir.</div>
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+let token=localStorage.getItem("wifiPhoneToken"),socket,pc,localStream,processedStream,audioContext,effectNodes;
+let currentCallId=null,incomingOffer=null,muted=false,callStartedAt=null,timerInterval=null,ringInterval=null,ringContext=null;
+const rtcConfig={iceServers:[{urls:"stun:stun.l.google.com:19302"}]};
+const formatPhone=n=>{n=String(n||"").replace(/\D/g,"");return n.length===10?"+90 "+n.slice(0,3)+" "+n.slice(3,6)+" "+n.slice(6,8)+" "+n.slice(8):n};
+function setStatus(m){$("status").textContent=m}
+function setBusy(b){$("callBtn").disabled=b;$("hangBtn").disabled=!b}
+function beep(freq=440,duration=.08){try{const c=new (window.AudioContext||window.webkitAudioContext)();const o=c.createOscillator(),g=c.createGain();o.frequency.value=freq;g.gain.setValueAtTime(.06,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+duration);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+duration);o.onended=()=>c.close()}catch{}}
+function stopRing(){if(ringInterval)clearInterval(ringInterval);ringInterval=null;if(ringContext){ringContext.close().catch(()=>{});ringContext=null}}
+function ringTone(kind){stopRing();try{ringContext=new (window.AudioContext||window.webkitAudioContext)();const c=ringContext;const playPair=()=>{if(!c||c.state==="closed")return;[440,480].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=f;g.gain.value=.035;o.connect(g);g.connect(c.destination);o.start(c.currentTime+i*.01);o.stop(c.currentTime+.65)})};playPair();ringInterval=setInterval(playPair,kind==="incoming"?2600:4200)}catch{}}
+async function api(path,options={}){const r=await fetch(path,{...options,headers:{...(options.headers||{}),Authorization:"Bearer "+token,"Content-Type":"application/json"}});const d=await r.json();if(!r.ok)throw new Error(d.error||"İşlem başarısız");return d}
+async function loadContacts(){
+ try{const rows=await api("/api/contacts");$("contactCount").textContent=rows.length?rows.length+" kişi":"";$("contacts").innerHTML="";
+  if(!rows.length){$("contacts").innerHTML='<div class="muted">Henüz kişi yok. Bir görüşme tamamlayınca kişi burada görünür.</div>';return}
+  rows.forEach(c=>{const row=document.createElement("div");row.className="contact";const info=document.createElement("div");info.className="contact-info";const name=document.createElement("div");name.className="contact-name";name.textContent=c.display_name||formatPhone(c.contact_phone);const number=document.createElement("div");number.className="contact-number";number.textContent=c.display_name?formatPhone(c.contact_phone):"Kişi";info.append(name,number);const call=document.createElement("button");call.className="call";call.textContent="📞";call.title="Ara";call.onclick=()=>{$("dial").value=c.contact_phone;startCall()};row.append(info,call);
+   let pressTimer;row.addEventListener("contextmenu",e=>{e.preventDefault();editContact(c.contact_phone,c.display_name||"")});row.addEventListener("touchstart",()=>{pressTimer=setTimeout(()=>editContact(c.contact_phone,c.display_name||""),650)},{passive:true});["touchend","touchmove","touchcancel"].forEach(ev=>row.addEventListener(ev,()=>clearTimeout(pressTimer)));name.addEventListener("dblclick",()=>editContact(c.contact_phone,c.display_name||""));$("contacts").append(row);
+  });
+ }catch(e){setStatus(e.message)}
+}
+async function editContact(phone,old){const value=prompt("Bu kişi için isim yaz:",old);if(value===null)return;try{await api("/api/contacts/"+phone,{method:"PUT",body:JSON.stringify({name:value})});await loadContacts()}catch(e){alert(e.message)}}
+async function register(){try{const r=await fetch("/api/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token})});const data=await r.json();if(!r.ok)throw new Error(data.error);token=data.token;localStorage.setItem("wifiPhoneToken",token);$("myNumber").textContent=formatPhone(data.phone_number);connectSocket();await loadContacts()}catch(e){setStatus(e.message)}}
+function connectSocket(){socket=io({auth:{token}});
+ socket.on("connect",()=>setStatus("Çevrimiçi • Arama yapabilirsin"));socket.on("disconnect",()=>setStatus("Bağlantı kesildi..."));socket.on("connect_error",e=>setStatus("Sunucu hatası: "+e.message));socket.on("contacts-updated",loadContacts);
+ socket.on("incoming-call",d=>{if(currentCallId){socket.emit("reject-call",{callId:d.callId});return}currentCallId=d.callId;incomingOffer=d.offer;$("callerNumber").textContent=formatPhone(d.fromNumber);$("incoming").style.display="block";$("callWho").textContent=formatPhone(d.fromNumber);$("callState").textContent="GELEN ARAMA";$("incomingOverlayActions").style.display="flex";$("mainCallActions").style.display="none";$("overlayMute").style.display="none";$("overlayHang").style.display="none";$("callOverlay").style.display="flex";setBusy(true);ringTone("incoming");setStatus("Gelen arama...")});
+ socket.on("calling",({callId,to})=>{currentCallId=callId;$("callWho").textContent=formatPhone(to);$("callState").textContent="Karşı tarafın telefonu çalıyor...";$("incomingOverlayActions").style.display="none";$("mainCallActions").style.display="flex";$("overlayMute").style.display="";$("overlayHang").style.display="";$("callOverlay").style.display="flex";ringTone("outgoing");setBusy(true);setStatus("Karşı tarafın telefonu çalıyor...")});
+ socket.on("call-answered",async({callId,answer})=>{if(callId!==currentCallId||!pc)return;stopRing();await pc.setRemoteDescription(answer);startTimer();$("callState").textContent="Görüşme başladı";setStatus("Görüşme başladı");$("callTools").style.display="grid"});
+ socket.on("call-rejected",()=>cleanup("Arama reddedildi"));socket.on("call-ended",()=>cleanup("Arama sona erdi"));socket.on("call-error",m=>cleanup(m));
+}
+async function getMicrophone(){if(!navigator.mediaDevices?.getUserMedia)throw new Error("Mikrofon için HTTPS gerekir.");return navigator.mediaDevices.getUserMedia({audio:true,video:false})}
+function waitForIceGathering(peer){if(peer.iceGatheringState==="complete")return Promise.resolve();return new Promise(resolve=>{const check=()=>{if(peer.iceGatheringState==="complete"){peer.removeEventListener("icegatheringstatechange",check);resolve()}};peer.addEventListener("icegatheringstatechange",check);setTimeout(()=>{peer.removeEventListener("icegatheringstatechange",check);resolve()},7000)})}
+function setupVoiceProcessing(){
+ audioContext=new (window.AudioContext||window.webkitAudioContext)();const source=audioContext.createMediaStreamSource(localStream);
+ const low=audioContext.createBiquadFilter();low.type="lowshelf";low.frequency.value=180;
+ const high=audioContext.createBiquadFilter();high.type="highshelf";high.frequency.value=2500;
+ const mid=audioContext.createBiquadFilter();mid.type="peaking";mid.frequency.value=180;mid.Q.value=1;
+ const hp=audioContext.createBiquadFilter();hp.type="highpass";hp.frequency.value=70;
+ const dest=audioContext.createMediaStreamDestination();source.connect(hp);hp.connect(low);low.connect(mid);mid.connect(high);high.connect(dest);
+ effectNodes={low,high,mid,hp,dest};processedStream=dest.stream;applyEffect("normal");return processedStream;
+}
+function applyEffect(effect){
+ if(!effectNodes)return;const n=effectNodes;[n.low,n.high,n.mid,n.hp].forEach(x=>x.disconnect());
+ const source=audioContext.createMediaStreamSource(localStream);source.connect(n.hp);n.hp.connect(n.low);n.low.connect(n.mid);n.mid.connect(n.high);n.high.connect(n.dest);
+ n.low.gain.value=0;n.high.gain.value=0;n.mid.gain.value=0;n.hp.frequency.value=70;
+ if(effect==="bass"){n.low.gain.value=15;n.mid.gain.value=3;n.mid.frequency.value=130}
+ if(effect==="deep"){n.low.gain.value=9;n.high.gain.value=-5;n.mid.gain.value=5;n.mid.frequency.value=160;n.hp.frequency.value=55}
+ if(effect==="squirrel"){n.low.gain.value=-8;n.high.gain.value=13;n.mid.gain.value=7;n.mid.frequency.value=2300;n.hp.frequency.value=500}
+ document.querySelectorAll(".effect").forEach(b=>b.classList.toggle("active",b.dataset.effect===effect));
+}
+function createPeer(){pc=new RTCPeerConnection(rtcConfig);pc.ontrack=e=>{let a=$("remoteAudio");if(!a){a=document.createElement("audio");a.id="remoteAudio";a.autoplay=true;document.body.append(a)}a.srcObject=e.streams[0];a.play().catch(()=>setStatus("Sesi başlatmak için ekrana dokun."))};pc.onconnectionstatechange=()=>{if(!pc)return;if(pc.connectionState==="connected"){stopRing();startTimer();$("callState").textContent="Görüşme başladı";$("callTools").style.display="grid";setStatus("Görüşme başladı")}if(["failed","disconnected"].includes(pc.connectionState))$("callState").textContent="Bağlantı zayıfladı"};return pc}
+async function preparePeer(){localStream=await getMicrophone();const outgoing=setupVoiceProcessing();createPeer();outgoing.getTracks().forEach(t=>pc.addTrack(t,outgoing))}
+async function startCall(){if(!socket?.connected)return setStatus("Sunucuya bağlı değilsin.");const number=$("dial").value.replace(/\D/g,"");if(!/^5\d{9}$/.test(number))return setStatus("5 ile başlayan 10 haneli numara gir.");try{setStatus("Mikrofon izni bekleniyor...");await preparePeer();const offer=await pc.createOffer();await pc.setLocalDescription(offer);await waitForIceGathering(pc);socket.emit("call-user",{to:number,offer:pc.localDescription});setBusy(true);$("callWho").textContent=formatPhone(number);$("callState").textContent="Aranıyor...";$("callOverlay").style.display="flex"}catch(e){cleanup("Arama başlatılamadı: "+e.message)}}
+async function acceptCall(){try{$("incoming").style.display="none";stopRing();await preparePeer();await pc.setRemoteDescription(incomingOffer);const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await waitForIceGathering(pc);socket.emit("answer-call",{callId:currentCallId,answer:pc.localDescription});incomingOffer=null;$("incomingOverlayActions").style.display="none";$("mainCallActions").style.display="flex";$("overlayMute").style.display="";$("overlayHang").style.display="";setBusy(true);$("callState").textContent="Arama bağlanıyor...";setStatus("Arama bağlanıyor...")}catch(e){cleanup("Arama kabul edilemedi: "+e.message)}}
+function rejectCall(){stopRing();if(currentCallId)socket.emit("reject-call",{callId:currentCallId});cleanup("Arama reddedildi")}
+function hangUp(){stopRing();if(currentCallId)socket.emit("end-call",{callId:currentCallId});cleanup("Arama kapatıldı")}
+function startTimer(){if(callStartedAt)return;callStartedAt=Date.now();timerInterval=setInterval(()=>{const s=Math.floor((Date.now()-callStartedAt)/1000);$("callTimer").textContent=String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")},500)}
+function cleanup(message){stopRing();if(timerInterval)clearInterval(timerInterval);timerInterval=null;callStartedAt=null;if(pc){pc.close();pc=null}if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null}if(audioContext){audioContext.close().catch(()=>{});audioContext=null}effectNodes=null;processedStream=null;const a=$("remoteAudio");if(a){a.srcObject=null;a.remove()}currentCallId=null;incomingOffer=null;muted=false;$("incoming").style.display="none";$("incomingOverlayActions").style.display="none";$("mainCallActions").style.display="flex";$("overlayMute").style.display="";$("overlayHang").style.display="";$("callTools").style.display="none";$("callOverlay").style.display="none";$("effectsPanel").style.display="none";$("moreMenu").style.display="none";$("muteBtn").textContent="🎙️ Mikrofonu kapat";$("overlayMute").innerHTML='<span class="mic-symbol">🎙️</span><span class="mic-ban" id="micBan">🚫</span>';$("micBan").style.display="none";$("callTimer").textContent="00:00";setBusy(false);setStatus(message);loadContacts()}
+function toggleMute(){if(!localStream)return;muted=!muted;localStream.getAudioTracks().forEach(t=>t.enabled=!muted);$("muteBtn").textContent=muted?"🎙️ Mikrofonu aç":"🎙️ Mikrofonu kapat";$("micBan").style.display=muted?"block":"none";$("overlayMute").title=muted?"Mikrofon kapalı"
