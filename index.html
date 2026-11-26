@@ -331,4 +331,233 @@
     $('callName').textContent=currentCall.name;$('callNumber').textContent=formatNumber(currentCall.peerNumber);
     $('callState').textContent='Bağlanıyor…';$('callOverlay').classList.add('show');
     try { await prepareMedia(); pc=createPeer(); socket.emit('call:accept',{callId:currentCall.callId}); }
-    catch(e){se
+catch(e) {
+      setStatus('Mikrofon açılamadı: ' + e.message);
+      await endCall(false);
+    }
+  };
+
+  $('rejectCall').onclick = () => {
+    if (incomingCall && socket) {
+      socket.emit('call:reject', {callId: incomingCall.callId});
+    }
+    incomingCall = null;
+    $('incomingOverlay').classList.remove('show');
+  };
+
+  async function endCall(notify = true) {
+    if (notify && currentCall && socket) {
+      socket.emit('call:end', {callId: currentCall.callId});
+    }
+
+    if (timerHandle) clearInterval(timerHandle);
+    timerHandle = null;
+    callStartedAt = 0;
+
+    if (pc) {
+      pc.close();
+      pc = null;
+    }
+
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.stop());
+      localStream = null;
+    }
+
+    if (audioContext) {
+      try { await audioContext.close(); } catch(e) {}
+      audioContext = null;
+    }
+
+    processedStream = null;
+    pendingIce = [];
+    currentCall = null;
+    muted = false;
+
+    $('muteButton').classList.remove('on');
+    $('muteButton').textContent = '🎙️';
+    $('callTools').classList.remove('show');
+    $('callOverlay').classList.remove('show');
+
+    const audio = $('remoteAudio');
+    if (audio) {
+      audio.pause();
+      audio.srcObject = null;
+    }
+
+    refreshData().catch(() => {});
+  }
+
+  $('hangupButton').onclick = () => endCall(true);
+
+  $('muteButton').onclick = () => {
+    if (!localStream) return;
+
+    muted = !muted;
+    localStream.getAudioTracks().forEach(track => {
+      track.enabled = !muted;
+    });
+
+    $('muteButton').classList.toggle('on', muted);
+    $('muteButton').textContent = muted ? '🔇' : '🎙️';
+  };
+
+  $('moreButton').onclick = () => {
+    $('callTools').classList.toggle('show');
+  };
+
+  function renderContacts() {
+    const list = $('peopleList');
+    list.innerHTML = '';
+
+    if (!contacts.length) {
+      list.innerHTML = '<div class="empty">Henüz kayıtlı kişi yok.</div>';
+      return;
+    }
+
+    contacts.forEach(contact => {
+      const number = contact.number || contact.contact_number || '';
+      const name = contact.name || formatNumber(number);
+
+      const item = document.createElement('div');
+      item.className = 'item';
+
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.textContent = name.charAt(0).toUpperCase();
+
+      const main = document.createElement('div');
+      main.className = 'item-main';
+
+      const title = document.createElement('div');
+      title.className = 'item-name';
+      title.textContent = name;
+
+      const sub = document.createElement('div');
+      sub.className = 'item-sub';
+      sub.textContent = formatNumber(number);
+
+      const call = document.createElement('button');
+      call.className = 'mini-call';
+      call.textContent = '📞';
+      call.onclick = () => startOutgoing(number);
+
+      main.append(title, sub);
+      item.append(avatar, main, call);
+      list.appendChild(item);
+    });
+  }
+
+  function renderHistory() {
+    const list = $('historyList');
+    list.innerHTML = '';
+
+    if (!historyRows.length) {
+      list.innerHTML = '<div class="empty">Henüz arama yok.</div>';
+      return;
+    }
+
+    historyRows.forEach(row => {
+      const number = row.number || row.peerNumber || row.peer_number || '';
+      const name = row.name || formatNumber(number);
+      const status = row.status || row.result || 'completed';
+
+      const item = document.createElement('div');
+      item.className = 'item';
+
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.textContent = '☎';
+
+      const main = document.createElement('div');
+      main.className = 'item-main';
+
+      const title = document.createElement('div');
+      title.className = 'item-name';
+      title.textContent = name;
+
+      const sub = document.createElement('div');
+      sub.className = 'item-sub history-number';
+
+      if (status === 'rejected') sub.classList.add('rejected');
+      else if (status === 'missed') sub.classList.add('missed');
+      else sub.classList.add('completed');
+
+      sub.textContent = formatNumber(number);
+
+      main.append(title, sub);
+      item.append(avatar, main);
+      list.appendChild(item);
+    });
+  }
+
+  function findContactName(number) {
+    const contact = contacts.find(c =>
+      String(c.number || c.contact_number) === String(number)
+    );
+    return contact ? contact.name : formatNumber(number);
+  }
+
+  let pressTimer = null;
+
+  $('numberDisplay').addEventListener('contextmenu', e => {
+    e.preventDefault();
+    if (dialNumber.length === 10) openSaveDialog(dialNumber);
+  });
+
+  $('numberDisplay').addEventListener('touchstart', () => {
+    if (dialNumber.length === 10) {
+      pressTimer = setTimeout(() => openSaveDialog(dialNumber), 650);
+    }
+  });
+
+  $('numberDisplay').addEventListener('touchend', () => {
+    clearTimeout(pressTimer);
+  });
+
+  $('numberDisplay').addEventListener('touchmove', () => {
+    clearTimeout(pressTimer);
+  });
+
+  function openSaveDialog(number) {
+    saveTarget = number;
+    $('saveNumber').textContent = formatNumber(number);
+    $('contactNameInput').value = '';
+    $('saveOverlay').classList.add('show');
+  }
+
+  $('cancelSave').onclick = () => {
+    $('saveOverlay').classList.remove('show');
+  };
+
+  $('confirmSave').onclick = async () => {
+    const name = $('contactNameInput').value.trim();
+
+    if (!name || !saveTarget) {
+      alert('Bir isim gir.');
+      return;
+    }
+
+    try {
+      await api('/contacts', {
+        method: 'POST',
+        body: JSON.stringify({
+          number: saveTarget,
+          name
+        })
+      });
+
+      $('saveOverlay').classList.remove('show');
+      setStatus('Kişi kaydedildi.');
+      await refreshData();
+    } catch(e) {
+      setStatus('Kişi kaydedilemedi: ' + e.message);
+    }
+  };
+
+  boot();
+})();
+</script>
+</body>
+</html>
+
