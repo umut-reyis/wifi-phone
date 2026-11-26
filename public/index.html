@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101827">
+  <title>WiFi-Phone</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0b1220;--panel:#121d2e;--panel2:#1a2940;--line:#293a54;--muted:#91a2bb;--text:#eef4ff;--blue:#4b8cff;--green:#27c281;--red:#ff5968}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#172944 0,#0b1220 48%);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--text);min-height:100vh}
+    button,input{font:inherit}button{cursor:pointer;border:0;color:inherit}button:disabled{opacity:.45;cursor:not-allowed}
+    .app{width:min(100%,520px);min-height:100vh;margin:auto;padding:18px 16px 100px;position:relative}
+    header{display:flex;align-items:center;justify-content:space-between;margin:8px 2px 22px}
+    .brand{font-weight:800;font-size:23px;letter-spacing:.3px}.brand span{color:#79aaff}.my-number{font-size:12px;color:var(--muted);text-align:right}.my-number b{display:block;color:#fff;font-size:14px;letter-spacing:1px;margin-top:3px}
+    .panel{background:linear-gradient(160deg,rgba(26,41,64,.96),rgba(17,29,46,.96));border:1px solid var(--line);border-radius:24px;padding:20px;box-shadow:0 16px 40px #0003}
+    .screen-title{font-size:15px;color:var(--muted);margin:0 0 13px}
+    .number-display{height:58px;border-radius:15px;background:#0b1525;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:24px;letter-spacing:2px;margin-bottom:17px;color:#fff}
+    .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .key{height:58px;border-radius:16px;background:#20324d;font-size:22px;font-weight:650;transition:.15s}.key:active{transform:scale(.96);background:#2c4568}.key small{display:block;font-size:9px;color:#9db0cb;letter-spacing:1px;margin-top:1px}
+    .actions{display:flex;gap:10px;margin-top:16px}.action{flex:1;padding:14px;border-radius:15px;font-weight:700;background:#263b59}.call{background:var(--green);color:#062316}.clear{background:#26364e}
+    .tabs{display:flex;gap:8px;margin:18px 0 12px}.tab{flex:1;background:#142238;color:var(--muted);padding:12px;border-radius:13px;font-weight:650}.tab.active{background:#2a4770;color:white}
+    .list{display:flex;flex-direction:column;gap:8px}.item{display:flex;align-items:center;gap:12px;background:#142238;border:1px solid #253954;padding:12px;border-radius:16px;min-height:66px}
+    .avatar{width:42px;height:42px;flex:0 0 42px;border-radius:50%;display:grid;place-items:center;background:#29456b;font-weight:800;color:#cfe1ff}
+    .item-main{min-width:0;flex:1}.item-name{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.item-sub{font-size:12px;color:var(--muted);margin-top:3px}
+    .history-number.completed{color:#48d69b}.history-number.rejected,.history-number.missed{color:#ff7883}
+    .mini-call{width:40px;height:40px;border-radius:50%;background:#1d815e;font-size:18px}.empty{color:var(--muted);text-align:center;padding:22px 8px;font-size:14px}
+    .bottom-nav{position:fixed;z-index:5;bottom:0;left:50%;transform:translateX(-50%);width:min(100%,520px);padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:#0c1626ee;backdrop-filter:blur(16px);border-top:1px solid var(--line);display:flex;gap:10px}
+    .bottom-nav button{flex:1;padding:13px;border-radius:14px;background:#1a2a42;color:#b9c9df;font-weight:700}.bottom-nav button.active{background:#31588c;color:#fff}
+    .overlay{position:fixed;inset:0;background:#030914d9;z-index:10;display:none;align-items:center;justify-content:center;padding:18px}.overlay.show{display:flex}
+    .modal{width:min(100%,390px);background:#142238;border:1px solid #344967;border-radius:26px;padding:24px;text-align:center;box-shadow:0 25px 80px #0008}
+    .call-avatar{width:94px;height:94px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#3968a8,#203955);font-size:38px;margin:16px auto}
+    .call-name{font-size:23px;font-weight:800}.call-sub{color:var(--muted);margin-top:6px}
+    .call-controls{display:flex;justify-content:center;gap:18px;margin:30px 0 8px}.round{width:60px;height:60px;border-radius:50%;background:#2a3d58;font-size:22px}.round.end{background:var(--red)}.round.on{background:#e5edf9;color:#122039}
+    .call-tools{display:none;margin-top:20px;text-align:left;background:#0d192a;padding:14px;border-radius:16px}.call-tools.show{display:block}.call-tools label{display:block;color:var(--muted);font-size:13px;margin-bottom:8px}.call-tools select{width:100%;padding:12px;background:#1b2d46;border:1px solid #3b5271;color:#fff;border-radius:12px}
+    .modal input{width:100%;padding:13px;border:1px solid #3a5273;background:#0c192b;border-radius:12px;color:#fff;margin:12px 0}.modal .actions{margin-top:12px}
+    .incoming-actions{display:flex;justify-content:center;gap:25px;margin-top:28px}.incoming-actions button{width:64px;height:64px;border-radius:50%;font-size:24px}.accept{background:var(--green)}.reject{background:var(--red)}
+    .status{font-size:12px;color:var(--muted);text-align:center;margin-top:13px;min-height:18px}
+    .hidden{display:none!important}
+    @media(max-width:380px){.app{padding:13px 12px 95px}.panel{padding:15px}.key{height:53px}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">WiFi-<span>Phone</span></div>
+    <div class="my-number">Senin numaran<b id="myNumber">Bağlanıyor…</b></div>
+  </header>
+
+  <main id="dialerView">
+    <section class="panel">
+      <p class="screen-title">Numara tuşla</p>
+      <div class="number-display" id="numberDisplay">Numara gir</div>
+      <div class="keypad" id="keypad">
+        <button class="key" data-key="1">1<small>&nbsp;</small></button>
+        <button class="key" data-key="2">2<small>ABC</small></button>
+        <button class="key" data-key="3">3<small>DEF</small></button>
+        <button class="key" data-key="4">4<small>GHI</small></button>
+        <button class="key" data-key="5">5<small>JKL</small></button>
+        <button class="key" data-key="6">6<small>MNO</small></button>
+        <button class="key" data-key="7">7<small>PQRS</small></button>
+        <button class="key" data-key="8">8<small>TUV</small></button>
+        <button class="key" data-key="9">9<small>WXYZ</small></button>
+        <button class="key" data-key="*">*</button>
+        <button class="key" data-key="0">0<small>+</small></button>
+        <button class="key" data-key="#">#</button>
+      </div>
+      <div class="actions">
+        <button class="action clear" id="backspace">Sil</button>
+        <button class="action call" id="callButton">📞 Ara</button>
+      </div>
+      <div class="status" id="mainStatus">Mikrofon ve aramalar için HTTPS bağlantısı gerekir.</div>
+    </section>
+  </main>
+
+  <main id="peopleView" class="hidden">
+    <section class="panel">
+      <p class="screen-title" id="listTitle">Kişiler</p>
+      <div class="list" id="peopleList"><div class="empty">Henüz kayıtlı kişi yok.</div></div>
+    </section>
+  </main>
+
+  <main id="historyView" class="hidden">
+    <section class="panel">
+      <p class="screen-title">Arama geçmişi</p>
+      <div class="list" id="historyList"><div class="empty">Henüz arama yok.</div></div>
+    </section>
+  </main>
+</div>
+
+<nav class="bottom-nav">
+  <button id="navDial" class="active">⌨️ Tuş takımı</button>
+  <button id="navPeople">👥 Kişiler</button>
+  <button id="navHistory">🕘 Geçmiş</button>
+</nav>
+
+<div class="overlay" id="incomingOverlay">
+  <div class="modal">
+    <div class="call-sub">Gelen arama</div>
+    <div class="call-avatar">☎</div>
+    <div class="call-name" id="incomingName">Bilinmeyen</div>
+    <div class="call-sub" id="incomingNumber"></div>
+    <div class="incoming-actions">
+      <button class="reject" id="rejectCall" aria-label="Reddet">✕</button>
+      <button class="accept" id="acceptCall" aria-label="Kabul et">📞</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="callOverlay">
+  <div class="modal">
+    <div class="call-sub" id="callState">Aranıyor…</div>
+    <div class="call-avatar">☎</div>
+    <div class="call-name" id="callName">WiFi-Phone</div>
+    <div class="call-sub" id="callNumber"></div>
+    <div class="call-sub" id="callTimer">00:00</div>
+    <div class="call-controls">
+      <button class="round" id="muteButton" title="Mikrofon">🎙️</button>
+      <button class="round end" id="hangupButton" title="Kapat">📵</button>
+      <button class="round" id="moreButton" title="Diğer">•••</button>
+    </div>
+    <div class="call-tools" id="callTools">
+      <label for="voiceEffect">Ses efekti (karşı tarafa iletilir)</label>
+      <select id="voiceEffect">
+        <option value="normal">Normal ses</option>
+        <option value="bass">Bass</option>
+        <option value="deep">Daha tok ses</option>
+        <option value="thin">Daha ince / tiz ton</option>
+        <option value="bright">Parlak ton</option>
+      </select>
+      <div class="call-sub" style="margin-top:8px">Bunlar ses tonu/EQ efektleridir; gerçek ses veya cinsiyet dönüşümü değildir.</div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="saveOverlay">
+  <div class="modal">
+    <div class="call-name">Kişiyi kaydet</div>
+    <div class="call-sub" id="saveNumber"></div>
+    <input id="contactNameInput" maxlength="40" placeholder="Ad girin">
+    <div class="actions">
+      <button class="action clear" id="cancelSave">Vazgeç</button>
+      <button class="action call" id="confirmSave">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const API = '/api';
+  let token = localStorage.getItem('wifiPhoneToken') || '';
+  let deviceKey = localStorage.getItem('wifiPhoneDeviceKey');
+  if (!deviceKey) {
+    deviceKey = crypto.randomUUID() + crypto.randomUUID();
+    localStorage.setItem('wifiPhoneDeviceKey', deviceKey);
+  }
+  let me = null, socket = null, contacts = [], historyRows = [], dialNumber = '';
+  let currentCall = null, incomingCall = null, pc = null, localStream = null, audioContext = null, processedStream = null;
+  let muted = false, timerHandle = null, callStartedAt = 0, saveTarget = '';
+  let activeCallRole = 'caller', pendingIce = [];
+
+  function formatNumber(n) {
+    const d = String(n || '').replace(/\D/g, '');
+    if (d.length !== 10) return n || '';
+    return `${d.slice(0,3)} ${d.slice(3,6)} ${d.slice(6,8)} ${d.slice(8,10)}`;
+  }
+  function setStatus(msg) { $('mainStatus').textContent = msg; }
+  async function api(path, options={}) {
+    const headers = {'Content-Type':'application/json', ...(options.headers||{})};
+    if (token) headers.Authorization = 'Bearer ' + token;
+    const res = await fetch(API + path, {...options, headers});
+    const data = await res.json().catch(()=>({error:'Sunucu yanıtı okunamadı'}));
+    if (!res.ok) throw new Error(data.error || 'İstek başarısız');
+    return data;
+  }
+  async function boot() {
+    try {
+      const data = await api('/register', {method:'POST', body:JSON.stringify({deviceKey})});
+      token = data.token; localStorage.setItem('wifiPhoneToken', token);
+      me = data.user; $('myNumber').textContent = formatNumber(me.number);
+      await refreshData();
+      connectSocket();
+      setStatus('Hazır. Arama yapmak için numara gir.');
+    } catch (e) { setStatus('Sunucu bağlantı hatası: ' + e.message); }
+  }
+  async function refreshData() {
+    const [c,h] = await Promise.all([api('/contacts'), api('/history')]);
+    contacts = c.contacts; historyRows = h.history;
+    renderContacts(); renderHistory();
+  }
+  function connectSocket() {
+    socket = io({auth:{token}});
+    socket.on('connect', () => setStatus('Çevrimiçi'));
+    socket.on('connect_error', e => setStatus('Bağlantı kurulamadı: ' + e.message));
+    socket.on('incoming-call', data => {
+      if (currentCall) { socket.emit('call:reject', {callId:data.callId, reason:'busy'}); return; }
+      incomingCall = data;
+      $('incomingName').textContent = data.name || formatNumber(data.fromNumber);
+      $('incomingNumber').textContent = formatNumber(data.fromNumber);
+      $('incomingOverlay').classList.add('show');
+    });
+    socket.on('call:accepted', async ({callId}) => {
+      if (!currentCall || currentCall.callId !== callId) return;
+      $('callState').textContent = 'Bağlanıyor…';
+      try {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        socket.emit('webrtc:offer', {callId, description:pc.localDescription});
+      } catch(e) { endCall(false); setStatus('Arama başlatılamadı: ' + e.message); }
+    });
+    socket.on('webrtc:offer', async ({callId, description}) => {
+      if (!currentCall || currentCall.callId !== callId) return;
+      try {
+        await pc.setRemoteDescription(description);
+        for (const candidate of pendingIce) await pc.addIceCandidate(candidate);
+        pendingIce = [];
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        socket.emit('webrtc:answer', {callId, description:pc.localDescription});
+      } catch(e) { setStatus('Bağlantı hatası: ' + e.message); }
+    });
+    socket.on('webrtc:answer', async ({callId, description}) => {
+      if (!currentCall || currentCall.callId !== callId) return;
+      try {
+        await pc.setRemoteDescription(description);
+        for (const candidate of pendingIce) await pc.addIceCandidate(candidate);
+        pendingIce = [];
+      } catch(e) { setStatus('Yanıt alınamadı: ' + e.message); }
+    });
+    socket.on('webrtc:ice', async ({callId, candidate}) => {
+      if (!currentCall || currentCall.callId !== callId || !candidate) return;
+      try {
+        if (pc && pc.remoteDescription) await pc.addIceCandidate(candidate);
+        else pendingIce.push(candidate);
+      } catch(e) { console.warn(e); }
+    });
+    socket.on('call:rejected', async () => { $('callState').textContent = 'Arama reddedildi'; await endCall(false); });
+    socket.on('call:unavailable', async () => { $('callState').textContent = 'Kullanıcı çevrimdışı veya ulaşılamıyor'; setTimeout(()=>endCall(false),1200); });
+    socket.on('call:ended', async () => { $('callState').textContent = 'Arama sona erdi'; await endCall(false); });
+  }
+  function showView(view) {
+    ['dialerView','peopleView','historyView'].forEach(id => $(id).classList.toggle('hidden', id !== view));
+    $('navDial').classList.toggle('active', view==='dialerView');
+    $('navPeople').classList.toggle('active', view==='peopleView');
+    $('navHistory').classList.toggle('active', view==='historyView');
+  }
+  $('navDial').onclick=()=>showView('dialerView');
+  $('navPeople').onclick=()=>{showView('peopleView');refreshData().catch(e=>setStatus(e.message));};
+  $('navHistory').onclick=()=>{showView('historyView');refreshData().catch(e=>setStatus(e.message));};
+
+  function updateDisplay() { $('numberDisplay').textContent = dialNumber ? formatNumber(dialNumber) : 'Numara gir'; }
+  $('keypad').addEventListener('click', e => {
+    const b=e.target.closest('[data-key]'); if(!b) return;
+    if(dialNumber.length<10) dialNumber += b.dataset.key.replace(/\D/g,'');
+    updateDisplay();
+  });
+  $('backspace').onclick=()=>{dialNumber=dialNumber.slice(0,-1);updateDisplay();};
+  async function startOutgoing(number) {
+    const digits=String(number).replace(/\D/g,'');
+    if(digits.length!==10){setStatus('10 haneli numara gir.');return;}
+    if(!socket || !socket.connected){setStatus('Sunucuya bağlı değilsin.');return;}
+    if(digits===String(me.number)){setStatus('Kendi numaranı arayamazsın.');return;}
+    try {
+      currentCall={callId:null, peerNumber:digits, incoming:false};
+      activeCallRole='caller';
+      await prepareMedia();
+      pc=createPeer();
+      const result=await api('/lookup/'+digits);
+      currentCall.name=result.name || formatNumber(digits);
+      $('callName').textContent=currentCall.name; $('callNumber').textContent=formatNumber(digits);
+      $('callState').textContent='Aranıyor…'; $('callOverlay').classList.add('show');
+      socket.emit('call:invite',{toNumber:digits}, ack=>{
+        if(!ack || !ack.ok){setStatus((ack&&ack.error)||'Arama gönderilemedi.');endCall(false);return;}
+        currentCall.callId=ack.callId;
+      });
+    } catch(e) { setStatus('Mikrofon açılamadı: '+e.message); await endCall(false); }
+  }
+  $('callButton').onclick=()=>startOutgoing(dialNumber);
+  async function prepareMedia() {
+    localStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});
+    audioContext=new (window.AudioContext||window.webkitAudioContext)();
+    const source=audioContext.createMediaStreamSource(localStream);
+    const filter=audioContext.createBiquadFilter();
+    filter.type='peaking'; filter.frequency.value=1000; filter.Q.value=.7; filter.gain.value=0;
+    const low=audioContext.createBiquadFilter(); low.type='lowshelf'; low.frequency.value=180; low.gain.value=0;
+    const high=audioContext.createBiquadFilter(); high.type='highshelf'; high.frequency.value=2600; high.gain.value=0;
+    source.connect(low); low.connect(filter); filter.connect(high);
+    const dest=audioContext.createMediaStreamDestination(); high.connect(dest);
+    processedStream=dest.stream;
+    audioContext._filters={low,filter,high};
+    applyVoiceEffect($('voiceEffect').value);
+  }
+  function applyVoiceEffect(mode) {
+    if(!audioContext || !audioContext._filters) return;
+    const {low,filter,high}=audioContext._filters;
+    low.gain.value=0;filter.gain.value=0;high.gain.value=0;
+    if(mode==='bass'){low.gain.value=10;filter.frequency.value=220;filter.gain.value=2;}
+    if(mode==='deep'){low.gain.value=5;high.gain.value=-3;filter.frequency.value=450;filter.gain.value=2;}
+    if(mode==='thin'){low.gain.value=-5;high.gain.value=8;filter.frequency.value=2400;filter.gain.value=2;}
+    if(mode==='bright'){high.gain.value=5;filter.frequency.value=3200;filter.gain.value=2;}
+  }
+  $('voiceEffect').onchange=e=>applyVoiceEffect(e.target.value);
+  function createPeer() {
+    const peer=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
+    processedStream.getAudioTracks().forEach(t=>peer.addTrack(t,processedStream));
+    peer.onicecandidate=e=>{if(e.candidate && currentCall?.callId)socket.emit('webrtc:ice',{callId:currentCall.callId,candidate:e.candidate});};
+    peer.ontrack=e=>{
+      let audio=document.getElementById('remoteAudio');
+      if(!audio){audio=document.createElement('audio');audio.id='remoteAudio';audio.autoplay=true;document.body.appendChild(audio);}
+      audio.srcObject=e.streams[0]; audio.play().catch(()=>{});
+    };
+    peer.onconnectionstatechange=()=>{
+      if(peer.connectionState==='connected'){ $('callState').textContent='Görüşme başladı'; if(!callStartedAt)startTimer();}
+      if(['failed','disconnected'].includes(peer.connectionState)) $('callState').textContent='Bağlantı zayıfladı…';
+    };
+    return peer;
+  }
+  function startTimer() {
+    callStartedAt=Date.now();
+    timerHandle=setInterval(()=>{
+      const s=Math.floor((Date.now()-callStartedAt)/1000);
+      $('callTimer').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+    },1000);
+  }
+  $('acceptCall').onclick=async()=>{
+    if(!incomingCall)return;
+    $('incomingOverlay').classList.remove('show');
+    currentCall={callId:incomingCall.callId,peerNumber:incomingCall.fromNumber,name:incomingCall.name||formatNumber(incomingCall.fromNumber),incoming:true};
+    activeCallRole='callee';
+    $('callName').textContent=currentCall.name;$('callNumber').textContent=formatNumber(currentCall.peerNumber);
+    $('callState').textContent='Bağlanıyor…';$('callOverlay').classList.add('show');
+    try { await prepareMedia(); pc=createPeer(); socket.emit('call:accept',{callId:currentCall.callId}); }
+    catch(e){se
